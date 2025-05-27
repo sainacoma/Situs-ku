@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Website IPA</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0; padding: 0; background: #f5f5f5; color: #333;
+  }
+  header {
+    background: #0066cc; color: white; padding: 1em; text-align: center;
+  }
+  main {
+    max-width: 800px;
+    margin: 1em auto;
+    background: white;
+    padding: 1em;
+    border-radius: 8px;
+  }
+  button {
+    margin: 0.5em 0.5em 0.5em 0;
+    padding: 0.5em 1em;
+    background: #0066cc;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #004a99;
+  }
+  .hidden {
+    display: none;
+  }
+  .link {
+    color: #0066cc;
+    text-decoration: underline;
+    word-break: break-all;
+  }
+  label {
+    font-weight: bold;
+  }
+  input[type="text"], textarea {
+    width: 100%;
+    padding: 0.5em;
+    margin-top: 0.25em;
+    margin-bottom: 1em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  textarea {
+    resize: vertical;
+  }
+  .search-input {
+    margin-bottom: 1em;
+    padding: 0.5em;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  @media (max-width: 600px) {
+    main {
+      margin: 0.5em;
+      padding: 0.5em;
+    }
+    button {
+      width: 100%;
+      margin: 0.25em 0;
+    }
+  }
+  .admin-section {
+    border-top: 2px solid #ccc;
+    margin-top: 2em;
+    padding-top: 1em;
+  }
+  .soal-item {
+    border-bottom: 1px solid #ddd;
+    padding: 0.5em 0;
+  }
+  .soal-item:last-child {
+    border-bottom: none;
+  }
+</style>
+</head>
+<body>
+
+<header><h1>Website IPA & Mata Pelajaran</h1></header>
+
+<main>
+
+<!-- Beranda -->
+<section id="beranda">
+  <h2>Selamat Datang!</h2>
+  <p>Silahkan tekan tombol mulai untuk melanjutkan ke halaman berikutnya, atau keluar untuk menutup halaman.</p>
+  <button id="btnMulai">Mulai</button>
+  <button id="btnKeluar">Keluar</button>
+</section>
+
+<!-- Pilih Mata Pelajaran -->
+<section id="pilihMapel" class="hidden">
+  <h2>Pilih Mata Pelajaran</h2>
+  <p>Silahkan pilih salah satu mata pelajaran berikut:</p>
+  <div id="mapelList">
+    <!-- Tombol mapel akan dibuat otomatis di JS -->
+  </div>
+  <button id="btnKembaliPilihMapel">Kembali</button>
+</section>
+
+<!-- Halaman Soal -->
+<section id="halamanSoal" class="hidden">
+  <h2 id="judulSoal">Soal Mata Pelajaran</h2>
+  <input
+    type="text"
+    id="searchSoal"
+    class="search-input"
+    placeholder="Cari soal..."
+  />
+  <div id="listSoal"></div>
+  <button id="btnKembaliSoal">Kembali ke Pilih Mapel</button>
+</section>
+
+<!-- Admin Panel -->
+<section id="adminPanel" class="hidden admin-section">
+  <h2>Admin Panel - Tambah Soal Baru</h2>
+  <label for="inputMapelAdmin">Mata Pelajaran:</label>
+  <select id="inputMapelAdmin">
+    <!-- Opsi akan dibuat otomatis -->
+  </select>
+  
+  <label for="inputSoal">Soal:</label>
+  <textarea id="inputSoal" rows="3" placeholder="Tulis soal di sini..."></textarea>
+  
+  <label for="inputJawaban">Jawaban:</label>
+  <textarea id="inputJawaban" rows="3" placeholder="Tulis jawaban di sini..."></textarea>
+  
+  <label for="inputLink">Link Sumber (opsional):</label>
+  <input type="text" id="inputLink" placeholder="https://..." />
+  
+  <button id="btnTambahSoal">Tambah Soal</button>
+  <button id="btnToggleAdmin">Sembunyikan Admin</button>
+</section>
+
+</main>
+
+<script>
+  // Data mata pelajaran
+  const mapel = [
+    "Matematika",
+    "Fisika",
+    "Biologi",
+    "Kimia",
+    "Bahasa Inggris",
+    "Bahasa Indonesia",
+    "Agama Islam",
+    "PKWU",
+    "Senida",
+    "PJOK",
+    "PKN",
+    "Sejarah",
+    "Ekonomi"
+  ];
+
+  // Data soal default (bisa diedit admin)
+  let dataSoal = {
+    Matematika: [
+      {
+        soal: "Berapa hasil dari 2 + 2?",
+        jawaban: "4",
+        link: "https://id.wikipedia.org/wiki/Penjumlahan"
+      },
+      {
+        soal: "Apa itu bilangan prima?",
+        jawaban: "Bilangan prima adalah bilangan asli yang hanya memiliki dua faktor yaitu 1 dan dirinya sendiri.",
+        link: ""
+      }
+    ],
+    Fisika: [
+      {
+        soal: "Apa rumus kecepatan?",
+        jawaban: "Kecepatan = Jarak / Waktu",
+        link: "https://id.wikipedia.org/wiki/Kecepatan"
+      }
+    ],
+    // sisanya bisa kosong
+  };
+
+  // Pengguna apakah admin? (untuk demo, pakai prompt, bisa diganti login yang sebenarnya)
+  let isAdmin = false;
+
+  // Simpan data ke localStorage agar tersimpan saat refresh
+  function saveData() {
+    localStorage.setItem("dataSoalIPA", JSON.stringify(dataSoal));
+  }
+  function loadData() {
+    const saved = localStorage.getItem("dataSoalIPA");
+    if (saved) {
+      dataSoal = JSON.parse(saved);
+    }
+  }
+  loadData();
+
+  // Elemen
+  const beranda = document.getElementById("beranda");
+  const pilihMapel = document.getElementById("pilihMapel");
+  const halamanSoal = document.getElementById("halamanSoal");
+  const adminPanel = document.getElementById("adminPanel");
+
+  const btnMulai = document.getElementById("btnMulai");
+  const btnKeluar = document.getElementById("btnKeluar");
+  const btnKembaliPilihMapel = document.getElementById("btnKembaliPilihMapel");
+  const btnKembaliSoal = document.getElementById("btnKembaliSoal");
+  const searchSoal = document.getElementById("searchSoal");
+  const listSoal = document.getElementById("listSoal");
+  const judulSoal = document.getElementById("judulSoal");
+
+  const inputMapelAdmin = document.getElementById("inputMapelAdmin");
+  const inputSoal = document.getElementById("inputSoal");
+  const inputJawaban = document.getElementById("inputJawaban");
+  const inputLink = document.getElementById("inputLink");
+  const btnTambahSoal = document.getElementById("btnTambahSoal");
+  const btnToggleAdmin = document.getElementById("btnToggleAdmin");
+
+  let mapelDipilih = null;
+
+  // Fungsi untuk tampilkan mapel di halaman pilih
+  function renderMapelList() {
+    const container = document.getElementById("mapelList");
+    container.innerHTML = "";
+    mapel.forEach(m => {
+      const btn = document.createElement("button");
+      btn.textContent = m;
+      btn.addEventListener("click", () => {
+        mapelDipilih = m;
+        showSoalMapel(m);
+      });
+      container.appendChild(btn);
+    });
+  }
+  renderMapelList();
+
+  // Fungsi untuk tampilkan opsi mapel di admin
+  function renderMapelAdminOptions() {
+    inputMapelAdmin.innerHTML = "";
+    mapel.forEach(m => {
+      const opt = document.createElement("option");
+      opt.value = m;
+      opt.textContent = m;
+      inputMapelAdmin.appendChild(opt);
+    });
+  }
+  renderMapelAdminOptions();
+
+  // Fungsi tampil halaman
+  function showSection(section) {
+    [beranda, pilihMapel, halamanSoal, adminPanel].forEach(sec => {
+      sec.classList.add("hidden");
+    });
+    section.classList.remove("hidden");
+  }
+
+  // Fungsi tampilkan soal mapel tertentu
+  function showSoalMapel(namaMapel) {
+    showSection(halamanSoal);
+    judulSoal.textContent = "Soal - " + namaMapel;
+    renderSoalList(namaMapel);
+    searchSoal.value = "";
+  }
+
+  // Render soal dengan filter pencarian
+  function renderSoalList(namaMapel, filter="") {
+    listSoal.innerHTML = "";
+    const arr = dataSoal[namaMapel] || [];
+    const filtered = arr.filter(item => item.soal.toLowerCase().includes(filter.toLowerCase()));
+    if(filtered.length === 0) {
+      listSoal.innerHTML = "<p>Tidak ada soal ditemukan.</p>";
+      return;
+    }
+    filtered.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "soal-item";
+      div.innerHTML = `
+        <p><strong>Soal:</strong> ${item.soal}</p>
+        <p><strong>Jawaban:</strong> ${item.jawaban}</p>
+      `;
+      if(item.link && item.link.trim() !== "") {
+        const linkDiv = document.createElement("p");
+        linkDiv.innerHTML = `<strong>Link:</strong> <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="link">${item.link}</a>`;
+        div.appendChild(linkDiv);
+      }
+      listSoal.appendChild(div);
+    });
+  }
+
+  // Event tombol
+  btnMulai.addEventListener("click", () => {
+    showSection(pilihMapel);
+  });
+
+  btnKeluar.addEventListener("click", () => {
+    window.close();
+  });
+
+  btnKembaliPilihMapel.addEventListener("click", () => {
+    showSection(beranda);
+  });
+
+  btnKembaliSoal.addEventListener("click", () => {
+    showSection(pilihMapel);
+  });
+
+  searchSoal.addEventListener("input", () => {
+    renderSoalList(mapelDipilih, searchSoal.value);
+  });
+
+  // Admin toggle dengan prompt password sederhana (ganti sesuai kebutuhan)
+  btnToggleAdmin.addEventListener("click", () => {
+    adminPanel.classList.add("hidden");
+  });
+
+  function showAdminPanel() {
+    adminPanel.classList.remove("hidden");
+  }
+
+  // Tambah soal baru lewat admin
+  btnTambahSoal.addEventListener("click", () => {
+    const mp = inputMapelAdmin.value;
+    const soal = inputSoal.value.trim();
+    const jawaban = inputJawaban.value.trim();
+    const link = inputLink.value.trim();
+
+    if(!soal || !jawaban) {
+      alert("Soal dan jawaban wajib diisi.");
+      return;
+    }
+    if(!dataSoal[mp]) dataSoal[mp] = [];
+    dataSoal[mp].push({ soal, jawaban, link });
+    saveData();
+
+    // Bersihkan form
+    inputSoal.value = "";
+    inputJawaban.value = "";
+    inputLink.value = "";
+
+    if(mapelDipilih === mp) {
+      renderSoalList(mp);
+    }
+
+    alert("Soal berhasil ditambahkan.");
+  });
+
+  // Minta password admin saat buka website
+  window.onload = () => {
+    const pw = prompt("Masukkan password admin (biarkan kosong jika bukan admin):");
+    if(pw === "admin123") {  // ganti password sesuai keinginan
+      isAdmin = true;
+      showAdminPanel();
+    }
+  };
+
+  // Mulai dari beranda
+  showSection(beranda);
+</script>
+
+</body>
+</html>
